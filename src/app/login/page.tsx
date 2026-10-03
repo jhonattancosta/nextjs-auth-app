@@ -3,19 +3,20 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions, isGitHubEnabled } from "@/lib/auth";
 import LoginForm from "@/components/LoginForm";
+import Box from "@/components/ui/Box";
 
-export const metadata = { title: "Login" };
+export const metadata = { title: "Entrar" };
 
 export default async function LoginPage() {
   // Se já estiver logado, não faz sentido mostrar o login.
   const session = await getServerSession(authOptions);
-  if (session) redirect("/dashboard");
+  if (session) redirect("/account");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-100 p-4 dark:bg-zinc-950">
+    <Box title="Entrar na conta">
       <Suspense>
         <LoginForm githubEnabled={isGitHubEnabled} />
       </Suspense>
-    </main>
+    </Box>
   );
 }

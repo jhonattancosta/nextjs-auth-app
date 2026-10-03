@@ -1,6 +1,7 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
+import { findAccountByEmail, verifyPassword } from "@/lib/store";
 
 /**
  * Configuração central do NextAuth.
@@ -15,17 +16,24 @@ const providers: NextAuthOptions["providers"] = [
     },
     async authorize(credentials) {
       if (!credentials?.email || !credentials?.password) return null;
+      const email = credentials.email.trim().toLowerCase();
 
-      // DEMO: valida contra um usuário fixo definido no .env.local.
-      // Em um projeto real, busque o usuário no banco de dados e
-      // compare a senha com um hash (ex.: bcrypt).
-      const isValid =
-        credentials.email === process.env.DEMO_USER_EMAIL &&
-        credentials.password === process.env.DEMO_USER_PASSWORD;
+      // 1) Contas criadas pelo site (página "Criar conta")
+      const account = await findAccountByEmail(email);
+      if (account && verifyPassword(credentials.password, account.passwordHash)) {
+        return { id: account.id, name: email, email };
+      }
 
-      if (!isValid) return null;
+      // 2) Conta de demonstração definida nas variáveis de ambiente
+      if (
+        process.env.DEMO_USER_EMAIL &&
+        email === process.env.DEMO_USER_EMAIL.toLowerCase() &&
+        credentials.password === process.env.DEMO_USER_PASSWORD
+      ) {
+        return { id: "demo", name: "Conta Demo", email };
+      }
 
-      return { id: "1", name: "Usuário Demo", email: credentials.email };
+      return null;
     },
   }),
 ];
